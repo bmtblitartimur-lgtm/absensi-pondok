@@ -113,7 +113,7 @@
   <sidebar id="mainSidebar">
     <div>
       <div class="brand">
-        <img id="sidebarLogo" src="https://via.placeholder.com/40" alt="Logo">
+        <img id="sidebarLogo" src="https://via.placeholder.com/40" alt="Logo" onerror="this.src='https://via.placeholder.com/40'">
         <div>
           <div class="brand-title" id="sidebarTitle">Pondok Pesantren</div>
           <div class="brand-sub">Absensi Sholat & Pengajian</div>
@@ -341,60 +341,66 @@
       fetch(SCRIPT_URL + "?action=getData")
         .then(res => res.json())
         .then(data => {
-          if(data.settings.Nama_Pondok) {
+          if(data.settings && data.settings.Nama_Pondok) {
             document.getElementById('sidebarTitle').innerText = data.settings.Nama_Pondok;
             document.getElementById('mobileTitle').innerText = data.settings.Nama_Pondok;
             document.getElementById('inputJudulApp').value = data.settings.Nama_Pondok;
           }
 
-          if(data.settings.Logo_Pondok) {
+          if(data.settings && data.settings.Logo_Pondok && data.settings.Logo_Pondok.trim() !== "") {
             document.getElementById('sidebarLogo').src = data.settings.Logo_Pondok;
             document.getElementById('inputLogoApp').value = data.settings.Logo_Pondok;
           }
 
           globalSantriMap = {};
-          data.santri.forEach(s => {
-            globalSantriMap[s.nis.toString()] = s.nama;
-          });
+          if(data.santri) {
+            data.santri.forEach(s => {
+              globalSantriMap[s.nis.toString()] = s.nama;
+            });
+          }
 
-          document.getElementById('statSantri').innerText = data.santri.length;
-          document.getElementById('statKegiatan').innerText = data.kegiatan.length;
+          document.getElementById('statSantri').innerText = data.santri ? data.santri.length : 0;
+          document.getElementById('statKegiatan').innerText = data.kegiatan ? data.kegiatan.length : 0;
           document.getElementById('statHadir').innerText = data.absensi ? data.absensi.length : 0;
-          document.getElementById('statAlpa').innerText = Math.max(0, data.santri.length - (data.absensi ? data.absensi.length : 0));
+          document.getElementById('statAlpa').innerText = Math.max(0, (data.santri ? data.santri.length : 0) - (data.absensi ? data.absensi.length : 0));
 
           let sel = document.getElementById('selectKegiatan');
           sel.innerHTML = '';
           let listKegHtml = '';
           let dashKegHtml = '';
-          data.kegiatan.forEach(k => {
-            sel.innerHTML += `<option value="${k.id}">${k.nama} (${k.waktu})</option>`;
-            listKegHtml += `<p><b>${k.nama}</b> - ${k.waktu}</p>`;
-            dashKegHtml += `<div style="padding:8px 0; border-bottom:1px solid #f1f1f1;"><b>${k.nama}</b><br><small style="color:var(--text-muted);">${k.waktu}</small></div>`;
-          });
+          if(data.kegiatan) {
+            data.kegiatan.forEach(k => {
+              sel.innerHTML += `<option value="${k.id}">${k.nama} (${k.waktu})</option>`;
+              listKegHtml += `<p><b>${k.nama}</b> - ${k.waktu}</p>`;
+              dashKegHtml += `<div style="padding:8px 0; border-bottom:1px solid #f1f1f1;"><b>${k.nama}</b><br><small style="color:var(--text-muted);">${k.waktu}</small></div>`;
+            });
+          }
           document.getElementById('listKegiatanContainer').innerHTML = listKegHtml || 'Belum ada kegiatan.';
           document.getElementById('dashSesiList').innerHTML = dashKegHtml || 'Belum ada sesi hari ini.';
 
           let listSantriHtml = '<table><tr><th>NIS</th><th>Nama</th><th>Foto</th></tr>';
           let kartuHtml = '';
-          data.santri.forEach(s => {
-            let fotoUrl = s.foto && s.foto.startsWith('http') ? s.foto : 'https://via.placeholder.com/75x95?text=Foto';
-            let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(s.nis);
+          if(data.santri) {
+            data.santri.forEach(s => {
+              let fotoUrl = (s.foto && s.foto.trim() !== "" && s.foto.startsWith('http')) ? s.foto : 'https://via.placeholder.com/75x95?text=Foto';
+              let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(s.nis);
 
-            listSantriHtml += `<tr><td>${s.nis}</td><td>${s.nama}</td><td><img src="${fotoUrl}" style="width:30px; height:40px; object-fit:cover; border-radius:3px;"></td></tr>`;
-            
-            kartuHtml += `
-              <div class="id-card">
-                <div style="font-size:11px; font-weight:bold; color:#2c3e50;">${data.settings.Nama_Pondok || 'PONDOK'}</div>
-                <img src="${fotoUrl}" class="foto" alt="Foto">
-                <div>
-                  <div style="font-weight:bold; font-size:13px; margin-top:4px;">${s.nama}</div>
-                  <div style="font-size:11px; color:#7f8c8d;">NIS: ${s.nis}</div>
+              listSantriHtml += `<tr><td>${s.nis}</td><td>${s.nama}</td><td><img src="${fotoUrl}" style="width:30px; height:40px; object-fit:cover; border-radius:3px;" onerror="this.src='https://via.placeholder.com/30x40?text=Foto'"></td></tr>`;
+              
+              kartuHtml += `
+                <div class="id-card">
+                  <div style="font-size:11px; font-weight:bold; color:#2c3e50;">${(data.settings && data.settings.Nama_Pondok) ? data.settings.Nama_Pondok : 'PONDOK'}</div>
+                  <img src="${fotoUrl}" class="foto" alt="Foto" onerror="this.src='https://via.placeholder.com/75x95?text=Foto'">
+                  <div>
+                    <div style="font-weight:bold; font-size:13px; margin-top:4px;">${s.nama}</div>
+                    <div style="font-size:11px; color:#7f8c8d;">NIS: ${s.nis}</div>
+                  </div>
+                  <img src="${qrUrl}" class="qr" alt="QR Code" onerror="this.src='https://via.placeholder.com/85?text=QR'">
+                  <button onclick="window.print()" style="font-size:11px; padding:6px;">Cetak Kartu</button>
                 </div>
-                <img src="${qrUrl}" class="qr" alt="QR Code">
-                <button onclick="window.print()" style="font-size:11px; padding:6px;">Cetak Kartu</button>
-              </div>
-            `;
-          });
+              `;
+            });
+          }
           listSantriHtml += '</table>';
           document.getElementById('listSantriContainer').innerHTML = listSantriHtml;
           document.getElementById('kartuContainer').innerHTML = kartuHtml || 'Belum ada data santri.';
